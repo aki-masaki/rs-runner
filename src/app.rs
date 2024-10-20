@@ -9,6 +9,7 @@ use std::io;
 pub struct App {
     pub tasks: Vec<Task>,
     pub should_quit: bool,
+    pub output: String
 }
 
 impl App {
