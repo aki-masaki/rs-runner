@@ -9,7 +9,8 @@ use std::io;
 pub struct App {
     pub tasks: Vec<Task>,
     pub should_quit: bool,
-    pub output: String
+    pub output: String,
+    pub selected_index: usize
 }
 
 impl App {
@@ -25,7 +26,17 @@ impl App {
             match key.code {
                 KeyCode::Char('q') => {
                     self.should_quit = !self.should_quit;
-                }
+                },
+                KeyCode::Char('j') => {
+                    if self.selected_index < self.tasks.len() - 1 {
+                        self.selected_index += 1;
+                    }
+                },
+                KeyCode::Char('k') => {
+                    if self.selected_index > 0 {
+                        self.selected_index -= 1;
+                    }
+                },
                 _ => {}
             }
         }

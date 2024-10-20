@@ -9,8 +9,6 @@ use ratatui::widgets::Block;
 use ratatui::widgets::Borders;
 use ratatui::widgets::Paragraph;
 use ratatui::Frame;
-use std::ops::Deref;
-use std::rc::Rc;
 
 pub fn ui(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
@@ -19,9 +17,16 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         .split(frame.area());
 
     let mut lines: Vec<Line> = vec![];
+    let mut line: Line;
 
-    for task in &app.tasks {
-        lines.push(Line::from(task.name.clone()));
+    for (i, task) in app.tasks.iter().enumerate() {
+        if i == app.selected_index {
+            line = Line::styled(task.name.clone(), Style::default().fg(Color::Cyan).italic());
+        } else {
+            line = Line::from(task.name.clone());
+        }
+
+        lines.push(line);
     }
 
     let sidebar_block = Block::default()
@@ -57,5 +62,6 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     output_area.y += 3;
     output_area.x += 1;
 
+    frame.render_widget(Text::from(lines), sidebar_area);
     frame.render_widget(Text::from(app.output.clone()), output_area);
 }
