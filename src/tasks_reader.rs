@@ -2,9 +2,9 @@ use std::fs;
 
 #[derive(Debug)]
 pub struct Task {
-    name: String,
-    command: String,
-    args: Vec<String>,
+    pub name: String,
+    pub command: String,
+    pub args: Vec<String>,
 }
 
 pub fn read_file(path: String) -> String {
