@@ -4,6 +4,7 @@ use ratatui::prelude::Stylize;
 use ratatui::style::Color;
 use ratatui::style::Style;
 use ratatui::text::Line;
+use ratatui::text::Span;
 use ratatui::text::Text;
 use ratatui::widgets::Block;
 use ratatui::widgets::Borders;
@@ -18,12 +19,31 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 
     let mut lines: Vec<Line> = vec![];
     let mut line: Line;
+    let mut content: Vec<Span>;
 
     for (i, task) in app.tasks.iter().enumerate() {
+        content = vec![
+            Span::from(task.name.clone()),
+            if task.is_running {
+                Span::styled(" started", Style::default().fg(Color::Green))
+            } else {
+                Span::styled(" stopped", Style::default().fg(Color::Red))
+            },
+        ];
+
         if i == app.selected_index {
-            line = Line::styled(task.name.clone(), Style::default().fg(Color::Cyan).italic());
+            line = Line::styled(
+                "",
+                Style::default()
+                    .fg(if task.is_running {
+                        Color::Green
+                    } else {
+                        Color::Red
+                    })
+                    .italic(),
+            ).spans(content);
         } else {
-            line = Line::from(task.name.clone());
+            line = Line::from(content);
         }
 
         lines.push(line);

@@ -1,10 +1,11 @@
 use std::fs;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Task {
     pub name: String,
     pub command: String,
     pub args: Vec<String>,
+    pub is_running: bool
 }
 
 pub fn read_file(path: String) -> String {
@@ -29,6 +30,7 @@ pub fn read_tasks(content: String) -> Vec<Task> {
                 .iter()
                 .map(|x| x.to_string())
                 .collect(),
+            is_running: false
         })
     }
 
