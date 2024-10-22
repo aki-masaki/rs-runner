@@ -1,3 +1,4 @@
+use crate::tasks_reader::Task;
 use crate::tasks_reader::TaskState;
 use crate::App;
 use ratatui::layout::{Constraint, Direction, Layout};
@@ -13,11 +14,69 @@ use ratatui::widgets::Paragraph;
 use ratatui::Frame;
 
 pub fn ui(frame: &mut Frame, app: &mut App) {
-    let chunks = Layout::default()
+    let main_chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(75), Constraint::Percentage(25)])
+        .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
         .split(frame.area());
 
+    let sidebar_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
+        .split(main_chunks[1]);
+
+    let tasks_block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(ratatui::widgets::BorderType::Rounded);
+
+    let tasks_title = Paragraph::new(Text::styled(
+        "Tasks",
+        Style::default().fg(Color::Green).bold(),
+    ))
+    .block(tasks_block);
+
+    let output_block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(ratatui::widgets::BorderType::Rounded);
+
+    let output_title = Paragraph::new(Text::styled(
+        "Output",
+        Style::default().fg(Color::Green).bold(),
+    ))
+    .block(output_block);
+
+    let inspect_block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(ratatui::widgets::BorderType::Rounded);
+
+    let inspect_title = Paragraph::new(Text::styled(
+        "Inspect",
+        Style::default().fg(Color::Green).bold(),
+    ))
+    .block(inspect_block);
+
+    frame.render_widget(output_title, main_chunks[0]);
+    frame.render_widget(tasks_title, sidebar_chunks[0]);
+    frame.render_widget(inspect_title, sidebar_chunks[1]);
+
+    let mut tasks_area = sidebar_chunks[0];
+    tasks_area.y += 3;
+    tasks_area.x += 3;
+
+    let mut inspect_area = sidebar_chunks[1];
+    inspect_area.y += 3;
+    inspect_area.x += 1;
+
+    let mut output_area = main_chunks[0];
+    output_area.y += 3;
+    output_area.x += 1;
+
+    frame.render_widget(Text::from(render_tasks(app)), tasks_area);
+    frame.render_widget(Text::from(app.output.clone()), output_area);
+
+    frame.render_widget(Text::from(render_inspector(app)), inspect_area);
+}
+
+fn render_tasks(app: &mut App) -> Vec<Line> {
     let mut lines: Vec<Line> = vec![];
     let mut line: Line;
     let mut content: Vec<Span>;
@@ -27,9 +86,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
             Span::from(task.name.clone()),
             match task.state {
                 TaskState::Started => Span::styled(" started", Style::default().fg(Color::Green)),
-                TaskState::Stopped => {
-                    Span::styled(" stopped", Style::default().fg(Color::Magenta))
-                }
+                TaskState::Stopped => Span::styled(" stopped", Style::default().fg(Color::Magenta)),
                 TaskState::Finished => Span::styled(" finished", Style::default().fg(Color::Blue)),
                 TaskState::Error => Span::styled(" error", Style::default().fg(Color::Red)),
             },
@@ -55,39 +112,40 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         lines.push(line);
     }
 
-    let sidebar_block = Block::default()
-        .borders(Borders::ALL)
-        .border_type(ratatui::widgets::BorderType::Rounded)
-        .style(Style::default());
+    lines
+}
 
-    let sidebar_title = Paragraph::new(Text::styled(
-        "Tasks",
-        Style::default().fg(Color::Green).bold(),
-    ))
-    .block(sidebar_block);
+fn render_inspector(app: &mut App) -> Vec<Line> {
+    let task = app.tasks[app.selected_index].clone();
 
-    let output_block = Block::default()
-        .borders(Borders::ALL)
-        .border_type(ratatui::widgets::BorderType::Rounded)
-        .style(Style::default());
-
-    let output_title = Paragraph::new(Text::styled(
-        "Output",
-        Style::default().fg(Color::Green).bold(),
-    ))
-    .block(output_block);
-
-    frame.render_widget(output_title, chunks[0]);
-    frame.render_widget(sidebar_title, chunks[1]);
-
-    let mut sidebar_area = chunks[1];
-    sidebar_area.y += 3;
-    sidebar_area.x += 3;
-
-    let mut output_area = chunks[0];
-    output_area.y += 3;
-    output_area.x += 1;
-
-    frame.render_widget(Text::from(lines), sidebar_area);
-    frame.render_widget(Text::from(app.output.clone()), output_area);
+    vec![
+        Line::from("").spans(
+            vec![
+                Span::styled("Name: ", Style::default().fg(Color::Blue)),
+                Span::styled(task.name, Style::default().fg(Color::Magenta))
+            ]
+        ),
+        Line::from("").spans(
+            vec![
+                Span::styled("Command: ", Style::default().fg(Color::Blue)),
+                Span::styled(task.command, Style::default().fg(Color::Magenta))
+            ]
+        ),
+        Line::from("").spans(
+            vec![
+                Span::styled("Dir: ", Style::default().fg(Color::Blue)),
+                Span::styled(task.dir, Style::default().fg(Color::Magenta))
+            ]
+        ),
+        Line::from("").spans(
+            vec![
+                Span::styled("Args: ", Style::default().fg(Color::Blue)),
+            ]
+        ),
+        Line::from("").spans(
+            vec![
+                Span::styled("   ".to_string() + task.args.join(" ").as_str(), Style::default().fg(Color::Magenta))
+            ]
+        ),
+    ]
 }
