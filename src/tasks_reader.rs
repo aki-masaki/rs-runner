@@ -1,11 +1,19 @@
 use std::fs;
 
 #[derive(Debug, Clone)]
+pub enum TaskState {
+    Stopped,
+    Started,
+    Finished,
+    Error
+}
+
+#[derive(Debug, Clone)]
 pub struct Task {
     pub name: String,
     pub command: String,
     pub args: Vec<String>,
-    pub is_running: bool,
+    pub state: TaskState,
     pub dir: String
 }
 
@@ -31,7 +39,7 @@ pub fn read_tasks(content: String) -> Vec<Task> {
                 .iter()
                 .map(|x| x.as_str().unwrap().to_string())
                 .collect(),
-            is_running: false,
+            state: TaskState::Stopped,
             dir: task.1.get("dir").unwrap().as_str().unwrap().to_string()
         })
     }

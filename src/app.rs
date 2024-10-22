@@ -1,4 +1,5 @@
 use crate::event::KeyCode;
+use crate::tasks_reader::TaskState;
 use crate::tasks_reader::{read_file, read_tasks, Task};
 use crate::Event;
 use std::io::Read;
@@ -56,7 +57,7 @@ impl App {
     fn run_task(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let task = self.tasks[self.selected_index].clone();
 
-        self.tasks[self.selected_index].is_running = true;
+        self.tasks[self.selected_index].state = TaskState::Started;
 
         let output = Command::new(task.command)
             .current_dir(task.dir)
@@ -65,10 +66,21 @@ impl App {
 
         match output {
             Ok(output) => {
-               self.output = String::from_utf8(output.stdout)?;
+                if !output.stderr.is_empty() {
+                    self.output = String::from_utf8(output.stderr)?;
+                    self.tasks[self.selected_index].state = TaskState::Error;
+
+                    return Ok(());
+                }
+
+                self.output = String::from_utf8(output.stdout)?;
+
+                self.tasks[self.selected_index].state = TaskState::Finished;
             }
             Err(ref e) => {
                 self.output = e.to_string();
+
+                self.tasks[self.selected_index].state = TaskState::Error;
             }
         }
 

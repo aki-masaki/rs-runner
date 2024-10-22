@@ -1,3 +1,4 @@
+use crate::tasks_reader::TaskState;
 use crate::App;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::Stylize;
@@ -24,10 +25,13 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     for (i, task) in app.tasks.iter().enumerate() {
         content = vec![
             Span::from(task.name.clone()),
-            if task.is_running {
-                Span::styled(" started", Style::default().fg(Color::Green))
-            } else {
-                Span::styled(" stopped", Style::default().fg(Color::Red))
+            match task.state {
+                TaskState::Started => Span::styled(" started", Style::default().fg(Color::Green)),
+                TaskState::Stopped => {
+                    Span::styled(" stopped", Style::default().fg(Color::Magenta))
+                }
+                TaskState::Finished => Span::styled(" finished", Style::default().fg(Color::Blue)),
+                TaskState::Error => Span::styled(" error", Style::default().fg(Color::Red)),
             },
         ];
 
@@ -35,13 +39,15 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
             line = Line::styled(
                 "",
                 Style::default()
-                    .fg(if task.is_running {
-                        Color::Green
-                    } else {
-                        Color::Red
+                    .fg(match task.state {
+                        TaskState::Started => Color::Green,
+                        TaskState::Stopped => Color::Magenta,
+                        TaskState::Finished => Color::Blue,
+                        TaskState::Error => Color::Red,
                     })
                     .italic(),
-            ).spans(content);
+            )
+            .spans(content);
         } else {
             line = Line::from(content);
         }
