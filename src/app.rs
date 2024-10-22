@@ -2,12 +2,7 @@ use crate::event::KeyCode;
 use crate::tasks_reader::TaskState;
 use crate::tasks_reader::{read_file, read_tasks, Task};
 use crate::Event;
-use std::io::Read;
-use std::process::Child;
 use std::process::Command;
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::thread;
 
 use ratatui::crossterm::event;
 use std::io;
@@ -18,6 +13,7 @@ pub struct App {
     pub should_quit: bool,
     pub output: String,
     pub selected_index: usize,
+    pub is_help_open: bool
 }
 
 impl App {
@@ -46,6 +42,9 @@ impl App {
                 }
                 KeyCode::Char('s') => {
                     let _ = self.run_task();
+                }
+                KeyCode::Char('h') => {
+                    self.is_help_open = !self.is_help_open;
                 }
                 _ => {}
             }

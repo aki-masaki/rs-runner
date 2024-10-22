@@ -1,4 +1,3 @@
-use crate::tasks_reader::Task;
 use crate::tasks_reader::TaskState;
 use crate::App;
 use ratatui::layout::{Constraint, Direction, Layout};
@@ -24,7 +23,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
         .split(main_chunks[1]);
 
-    let tasks_block = Block::default()
+    let block = Block::default()
         .borders(Borders::ALL)
         .border_type(ratatui::widgets::BorderType::Rounded);
 
@@ -32,29 +31,32 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         "Tasks",
         Style::default().fg(Color::Green).bold(),
     ))
-    .block(tasks_block);
-
-    let output_block = Block::default()
-        .borders(Borders::ALL)
-        .border_type(ratatui::widgets::BorderType::Rounded);
+    .block(block.clone());
 
     let output_title = Paragraph::new(Text::styled(
         "Output",
         Style::default().fg(Color::Green).bold(),
     ))
-    .block(output_block);
+    .block(block.clone());
 
-    let inspect_block = Block::default()
-        .borders(Borders::ALL)
-        .border_type(ratatui::widgets::BorderType::Rounded);
+    let help_title = Paragraph::new(Text::styled(
+        "Help",
+        Style::default().fg(Color::Green).bold(),
+    ))
+    .block(block.clone());
 
     let inspect_title = Paragraph::new(Text::styled(
         "Inspect",
         Style::default().fg(Color::Green).bold(),
     ))
-    .block(inspect_block);
+    .block(block);
 
-    frame.render_widget(output_title, main_chunks[0]);
+    if app.is_help_open {
+        frame.render_widget(help_title, main_chunks[0]);
+    } else {
+        frame.render_widget(output_title, main_chunks[0]);
+    }
+
     frame.render_widget(tasks_title, sidebar_chunks[0]);
     frame.render_widget(inspect_title, sidebar_chunks[1]);
 
@@ -71,7 +73,12 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     output_area.x += 1;
 
     frame.render_widget(Text::from(render_tasks(app)), tasks_area);
-    frame.render_widget(Text::from(app.output.clone()), output_area);
+
+    if app.is_help_open {
+        frame.render_widget(Text::from(render_help(app)), output_area);
+    } else {
+        frame.render_widget(Text::from(app.output.clone()), output_area);
+    }
 
     frame.render_widget(Text::from(render_inspector(app)), inspect_area);
 }
@@ -119,33 +126,50 @@ fn render_inspector(app: &mut App) -> Vec<Line> {
     let task = app.tasks[app.selected_index].clone();
 
     vec![
-        Line::from("").spans(
-            vec![
-                Span::styled("Name: ", Style::default().fg(Color::Blue)),
-                Span::styled(task.name, Style::default().fg(Color::Magenta))
-            ]
-        ),
-        Line::from("").spans(
-            vec![
-                Span::styled("Command: ", Style::default().fg(Color::Blue)),
-                Span::styled(task.command, Style::default().fg(Color::Magenta))
-            ]
-        ),
-        Line::from("").spans(
-            vec![
-                Span::styled("Dir: ", Style::default().fg(Color::Blue)),
-                Span::styled(task.dir, Style::default().fg(Color::Magenta))
-            ]
-        ),
-        Line::from("").spans(
-            vec![
-                Span::styled("Args: ", Style::default().fg(Color::Blue)),
-            ]
-        ),
-        Line::from("").spans(
-            vec![
-                Span::styled("   ".to_string() + task.args.join(" ").as_str(), Style::default().fg(Color::Magenta))
-            ]
-        ),
+        Line::from("").spans(vec![
+            Span::styled("Name: ", Style::default().fg(Color::Blue)),
+            Span::styled(task.name, Style::default().fg(Color::Magenta)),
+        ]),
+        Line::from("").spans(vec![
+            Span::styled("Command: ", Style::default().fg(Color::Blue)),
+            Span::styled(task.command, Style::default().fg(Color::Magenta)),
+        ]),
+        Line::from("").spans(vec![
+            Span::styled("Dir: ", Style::default().fg(Color::Blue)),
+            Span::styled(task.dir, Style::default().fg(Color::Magenta)),
+        ]),
+        Line::from("").spans(vec![Span::styled(
+            "Args: ",
+            Style::default().fg(Color::Blue),
+        )]),
+        Line::from("").spans(vec![Span::styled(
+            "   ".to_string() + task.args.join(" ").as_str(),
+            Style::default().fg(Color::Magenta),
+        )]),
+    ]
+}
+
+fn render_help(_app: &mut App) -> Vec<Line> {
+    vec![
+        Line::from("").spans(vec![
+            Span::styled("q ", Color::Blue),
+            Span::styled("quit", Color::Magenta),
+        ]),
+        Line::from("").spans(vec![
+            Span::styled("h ", Color::Blue),
+            Span::styled("help", Color::Magenta),
+        ]),
+        Line::from("").spans(vec![
+            Span::styled("j ", Color::Blue),
+            Span::styled("down", Color::Magenta),
+        ]),
+        Line::from("").spans(vec![
+            Span::styled("k ", Color::Blue),
+            Span::styled("up", Color::Magenta),
+        ]),
+        Line::from("").spans(vec![
+            Span::styled("s ", Color::Blue),
+            Span::styled("run", Color::Magenta),
+        ]),
     ]
 }
