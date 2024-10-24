@@ -14,7 +14,8 @@ pub struct Task {
     pub command: String,
     pub args: Vec<String>,
     pub state: TaskState,
-    pub dir: String
+    pub dir: String,
+    pub output: Option<String>
 }
 
 pub fn read_file(path: String) -> String {
@@ -40,7 +41,8 @@ pub fn read_tasks(content: String) -> Vec<Task> {
                 .map(|x| x.as_str().unwrap().to_string())
                 .collect(),
             state: TaskState::Stopped,
-            dir: task.1.get("dir").unwrap().as_str().unwrap().to_string()
+            dir: task.1.get("dir").unwrap().as_str().unwrap().to_string(),
+            output: None
         })
     }
 

@@ -10,6 +10,7 @@ use ratatui::text::Text;
 use ratatui::widgets::Block;
 use ratatui::widgets::Borders;
 use ratatui::widgets::Paragraph;
+use ratatui::widgets::Wrap;
 use ratatui::Frame;
 
 pub fn ui(frame: &mut Frame, app: &mut App) {
@@ -77,7 +78,10 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     if app.is_help_open {
         frame.render_widget(Text::from(render_help(app)), output_area);
     } else {
-        frame.render_widget(Text::from(app.output.clone()), output_area);
+        frame.render_widget(
+            Paragraph::new(app.output.clone()).wrap(Wrap { trim: true }),
+            output_area,
+        );
     }
 
     frame.render_widget(Text::from(render_inspector(app)), inspect_area);
@@ -170,6 +174,10 @@ fn render_help(_app: &mut App) -> Vec<Line> {
         Line::from("").spans(vec![
             Span::styled("s ", Color::Blue),
             Span::styled("run", Color::Magenta),
+        ]),
+        Line::from("").spans(vec![
+            Span::styled("r ", Color::Blue),
+            Span::styled("refresh", Color::Magenta),
         ]),
     ]
 }

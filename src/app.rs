@@ -3,6 +3,10 @@ use crate::tasks_reader::TaskState;
 use crate::tasks_reader::{read_file, read_tasks, Task};
 use crate::Event;
 use std::process::Command;
+use std::process::Output;
+use std::sync::mpsc;
+use std::sync::mpsc::Receiver;
+use std::sync::Arc;
 
 use ratatui::crossterm::event;
 use std::io;
@@ -13,7 +17,8 @@ pub struct App {
     pub should_quit: bool,
     pub output: String,
     pub selected_index: usize,
-    pub is_help_open: bool
+    pub is_help_open: bool,
+    pub rx: Arc<Option<Receiver<(String, Result<Output, io::Error>)>>>,
 }
 
 impl App {
@@ -30,16 +35,9 @@ impl App {
                 KeyCode::Char('q') => {
                     self.should_quit = !self.should_quit;
                 }
-                KeyCode::Char('j') => {
-                    if self.selected_index < self.tasks.len() - 1 {
-                        self.selected_index += 1;
-                    }
-                }
-                KeyCode::Char('k') => {
-                    if self.selected_index > 0 {
-                        self.selected_index -= 1;
-                    }
-                }
+                KeyCode::Char('j') => self.focus(1, true),
+                KeyCode::Char('k') => self.focus(1, false),
+                KeyCode::Char('r') => self.focus(0, true),
                 KeyCode::Char('s') => {
                     let _ = self.run_task();
                 }
@@ -53,35 +51,42 @@ impl App {
         Ok(())
     }
 
+    fn focus(&mut self, delta: usize, positive: bool) {
+        self.selected_index = if positive {
+            self.selected_index
+                + if self.selected_index < self.tasks.len() - 1 {
+                    delta
+                } else {
+                    0
+                }
+        } else {
+            self.selected_index - if self.selected_index > 0 { delta } else { 0 }
+        };
+
+        if let Some(output) = &self.tasks[self.selected_index].output {
+            self.output = output.clone();
+        } else {
+            self.output = "".to_string();
+        }
+    }
+
     fn run_task(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let task = self.tasks[self.selected_index].clone();
 
         self.tasks[self.selected_index].state = TaskState::Started;
 
-        let output = Command::new(task.command)
-            .current_dir(task.dir)
-            .args(task.args)
-            .output();
+        let (tx, rx) = mpsc::channel::<(String, Result<Output, io::Error>)>();
 
-        match output {
-            Ok(output) => {
-                if !output.stderr.is_empty() {
-                    self.output = String::from_utf8(output.stderr)?;
-                    self.tasks[self.selected_index].state = TaskState::Error;
+        self.rx = Arc::new(Some(rx));
 
-                    return Ok(());
-                }
+        std::thread::spawn(move || {
+            let output = Command::new(task.command)
+                .current_dir(task.dir)
+                .args(task.args)
+                .output();
 
-                self.output = String::from_utf8(output.stdout)?;
-
-                self.tasks[self.selected_index].state = TaskState::Finished;
-            }
-            Err(ref e) => {
-                self.output = e.to_string();
-
-                self.tasks[self.selected_index].state = TaskState::Error;
-            }
-        }
+            let _ = tx.send((task.name, output));
+        });
 
         Ok(())
 
